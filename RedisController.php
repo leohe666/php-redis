@@ -68,4 +68,24 @@ class RedisController extends Controller
             
         }
     }
+    //redislock
+    public function redis()
+    {
+        $Redis = ClientFactory::create([
+            'server' => 'tcp://redis:6379'
+        ]);
+        $Lock = new RedisLock(
+            $Redis, // Instance of RedisClient,
+            'redis-lock', // Key in storage,
+        );
+        if (!$Lock->acquire(2, 3)) {
+            throw new \Exception('Can\'t get a Lock');
+        }
+        usleep(100);
+        $Lock->update(3);
+        if ($Redis->get("redis-counter") > 0) {
+            $Redis->decr("redis-counter");
+            $Lock->release();
+        }
+    }
 }
